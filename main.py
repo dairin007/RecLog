@@ -42,9 +42,6 @@ def main() -> None:
     if not args.quiet:
         reporter.print_session_start(session_info)
     
-    # Setup recording environment
-    recorder._setup_recording()
-    
     # Display recording start information
     if not args.quiet:
         reporter.print_recording_start()
