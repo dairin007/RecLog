@@ -10,12 +10,10 @@ class VideoRecorder:
     """
     @brief Class for handling full-screen recording functionality
     
-    Uses ffmpeg to record the screen, with options for time-based segmentation
-    and storage optimization.
+    Uses ffmpeg to record the screen as a single video file.
     """
     
     def __init__(self, output_dir: Path, project_name: str, 
-                 segment_duration: int = 3600, 
                  video_quality: str = "medium",
                  framerate: int = 15):
         """
@@ -23,13 +21,11 @@ class VideoRecorder:
         
         @param output_dir Directory to save recordings
         @param project_name Project name (used in filenames)
-        @param segment_duration Duration of each segment in seconds (default: 3600 = 1 hour)
         @param video_quality Encoder quality setting (low, medium, high)
         @param framerate Capture framerate (lower means smaller file size)
         """
         self.output_dir = output_dir
         self.project_name = project_name
-        self.segment_duration = segment_duration
         self.video_quality = video_quality
         self.framerate = framerate
         
@@ -40,10 +36,9 @@ class VideoRecorder:
         self._recording = False
         self._process: Optional[subprocess.Popen] = None
         self._thread: Optional[threading.Thread] = None
-        self._segment_count = 0
         self._start_time = datetime.now()
-        self._segments: List[Path] = []
-    
+        self._output_file: Optional[Path] = None
+
     def _get_video_settings(self) -> List[str]:
         """
         @brief Get ffmpeg settings based on quality setting
@@ -62,13 +57,12 @@ class VideoRecorder:
     
     def _get_output_filename(self) -> Path:
         """
-        @brief Generate output filename for the current segment
+        @brief Generate output filename for the video
         
         @return Path to the output file
         """
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        segment_suffix = f"_part{self._segment_count}" if self._segment_count > 0 else ""
-        return self.output_dir / f"{self.project_name}_{timestamp}{segment_suffix}.mp4"
+        return self.output_dir / f"{self.project_name}_{timestamp}.mp4"
     
     def start_recording(self) -> None:
         """
@@ -82,8 +76,7 @@ class VideoRecorder:
         
         self._recording = True
         self._start_time = datetime.now()
-        self._segment_count = 0
-        self._segments = []
+        self._output_file = self._get_output_filename()
         
         # Start recording in a separate thread
         self._thread = threading.Thread(target=self._recording_thread)
@@ -96,65 +89,54 @@ class VideoRecorder:
         """
         @brief Thread function that handles the recording process
         
-        Manages ffmpeg processes and implements segment rotation
+        Manages ffmpeg process for continuous recording
         """
-        while self._recording:
-            output_file = self._get_output_filename()
-            self._segments.append(output_file)
+        # Get quality settings
+        video_settings = self._get_video_settings()
+        
+        # Start ffmpeg process for screen recording
+        try:
+            # Build the ffmpeg command
+            # This works on most Linux systems with X11
+            cmd = [
+                "ffmpeg",
+                "-f", "x11grab",      # X11 display grabbing
+                "-framerate", str(self.framerate),
+                "-i", ":0.0",         # Display identifier
+                "-r", str(self.framerate),
+                "-vf", "crop=iw:floor(ih/2)*2",
+                *video_settings,
+                "-pix_fmt", "yuv420p",  # Ensure compatibility
+                str(self._output_file)
+            ]
             
-            # Get quality settings
-            video_settings = self._get_video_settings()
+            print(f"Starting video recording: {self._output_file}")
+            self._process = subprocess.Popen(
+                cmd,
+                stderr=subprocess.PIPE, # stderrをパイプに接続
+                text=True # エラー出力をテキストとして扱う
+            )
             
-            # Start ffmpeg process for screen recording
-            try:
-                # Build the ffmpeg command
-                # This works on most Linux systems with X11
-                cmd = [
-                    "ffmpeg",
-                    "-f", "x11grab",      # X11 display grabbing
-                    "-framerate", str(self.framerate),
-                    "-i", ":0.0",         # Display identifier
-                    "-f", "alsa",         # Audio source
-                    "-i", "default",      # Default audio device
-                    "-r", str(self.framerate),
-                    *video_settings,
-                    "-pix_fmt", "yuv420p",  # Ensure compatibility
-                    "-t", str(self.segment_duration),  # Segment duration
-                    str(output_file)
-                ]
-                
-                print(f"Starting new video segment: {output_file}")
-                self._process = subprocess.Popen(
-                    cmd, 
-                    stdout=subprocess.PIPE, 
-                    stderr=subprocess.PIPE
-                )
-                
-                # Wait for the process to complete (either by timeout or stop_recording call)
-                self._process.wait()
-                
-                # Increment counter for next segment
-                if self._recording:  # Only increment if still recording
-                    self._segment_count += 1
-                
-            except Exception as e:
-                print(f"Error during video recording: {e}")
-                self._recording = False
-                break
-                
-            # Check if we should continue recording
-            if not self._recording:
-                break
+            # Wait for the process to complete (when stop_recording is called)
+            stdout, stderr = self._process.communicate() # wait()の代わりにcommunicate()を使う
+            if stderr:
+                print("--- FFmpeg Error Output ---")
+                print(stderr)
+                print("-------------------------")
+            
+        except Exception as e:
+            print(f"Error during video recording: {e}")
+            self._recording = False
     
-    def stop_recording(self) -> List[Path]:
+    def stop_recording(self):
         """
         @brief Stop the ongoing recording
         
-        @return List of recorded segment paths
+        @return Path to the recorded video file, or None if no recording was in progress
         """
-        if not self._recording:
+        if not self._recording or not self._output_file:
             print("No recording in progress")
-            return []
+            return None
         
         self._recording = False
         
@@ -183,6 +165,6 @@ class VideoRecorder:
         minutes, seconds = divmod(remainder, 60)
         
         print(f"Recording stopped. Total duration: {hours}h {minutes}m {seconds}s")
-        print(f"Recorded {len(self._segments)} segment(s)")
+        print(f"Recorded video: {self._output_file}")
         
-        return self._segments
+        return self._output_file
