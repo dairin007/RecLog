@@ -119,7 +119,7 @@ class VideoRecorder:
             
             # Wait for the process to complete (when stop_recording is called)
             stdout, stderr = self._process.communicate() # wait()の代わりにcommunicate()を使う
-            if stderr:
+            if self._process.returncode != 0 and self._recording:
                 print("--- FFmpeg Error Output ---")
                 print(stderr)
                 print("-------------------------")
@@ -134,11 +134,17 @@ class VideoRecorder:
         
         @return Path to the recorded video file, or None if no recording was in progress
         """
-        if not self._recording or not self._output_file:
+        is_process_running = self._process and self._process.poll() is None
+
+        if not self._recording or not is_process_running:
             print("No recording in progress")
+            self._process = None # クリーンアップ
+            self._thread = None
             return None
         
-        self._recording = False
+        if self._recording:
+            self._recording = False
+        recorded_file_path = self._output_file
         
         # Terminate the ffmpeg process
         if self._process and self._process.poll() is None:
@@ -147,24 +153,41 @@ class VideoRecorder:
                 self._process.terminate()
                 
                 # Give it time to clean up
-                time.sleep(1)
+                time.sleep(2)
                 
                 # Force kill if still running
                 if self._process.poll() is None:
+                    print("Force ffmpeg kill.")
                     self._process.kill()
+                    self._process.wait()
             except Exception as e:
                 print(f"Error stopping recording: {e}")
-        
+
         # Wait for the thread to complete
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=5)
+
+        final_file_exists = recorded_file_path and recorded_file_path.exists()
+        final_file_has_size = final_file_exists and recorded_file_path.stat().st_size > 0
+        if final_file_has_size:
+
+            # Calculate recording duration
+            duration = datetime.now() - self._start_time
+            hours, remainder = divmod(duration.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
         
-        # Calculate recording duration
-        duration = datetime.now() - self._start_time
-        hours, remainder = divmod(duration.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
+            print(f"Recording stopped. Total duration: {hours}h {minutes}m {seconds}s")
+            print(f"Recorded video: {self._output_file}")
+            result = recorded_file_path
+        elif final_file_exists:
+            print(f"Recorded File '{recorded_file_path}' is Empty.") # Recorded file is empty.
+            result = None
+        else:
+            print("Recorded File is not Generated.") # Recorded file was not generated.
+            result = None
         
-        print(f"Recording stopped. Total duration: {hours}h {minutes}m {seconds}s")
-        print(f"Recorded video: {self._output_file}")
-        
-        return self._output_file
+        # Reset internal state for next recording
+        self._process = None
+        self._thread = None
+        self._output_file = None
+        return result
