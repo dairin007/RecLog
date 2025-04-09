@@ -41,15 +41,6 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
 
         self._is_recording=False
 
-
-    def get_output_path(self) -> Path:
-        """
-        @brief Get the path where the recording will be saved.
-
-        @return Path to the output file.
-        """
-        return self.session_config.asciinema_file
-
     def get_session_info(self) -> Dict[str, Any]:
         """
         @brief Get informations on Current Recording Session

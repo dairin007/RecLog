@@ -20,15 +20,6 @@ class AbstractRecorder(ABC):
         pass
 
     @abstractmethod
-    def get_output_path(self) -> Path:
-        """
-        @brief Get the path where the recording will be saved.
-
-        @return Path to the output file or directory.
-        """
-        pass
-
-    @abstractmethod
     def setup(self) -> None:
         """
         @brief Perform any necessary setup before recording can begin.
@@ -81,7 +72,7 @@ class AbstractRecorder(ABC):
 
         @return True if recording is in progress, False otherwise.
         """
-        return self._is_recording
+        pass
 
     @property
     def output_file(self) -> Optional[Path]:
@@ -90,4 +81,4 @@ class AbstractRecorder(ABC):
 
         @return Path to the output file or None if not available.
         """
-        return self._output_file
+        pass

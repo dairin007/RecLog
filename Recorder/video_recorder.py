@@ -43,15 +43,6 @@ class VideoRecorder(AbstractRecorder):
 
         self._is_recording=False
 
-
-    def get_output_path(self) -> Path:
-        """
-        @brief Get the path where the recording will be saved.
-
-        @return Path to the output file.
-        """
-        return self._output_file
-
     def _get_video_settings(self) -> List[str]:
         """
         @brief Get ffmpeg settings based on quality setting
@@ -231,4 +222,6 @@ class VideoRecorder(AbstractRecorder):
         checks if the recording thread is still active and waits for it to finish.
         """
         # video recorder is not required this method
-        pass
+        if self._is_recording and self._thread and self._thread.is_alive():
+            # タイムアウトを設定しない場合は、スレッドが完全に終了するまで待機
+            self._thread.join()

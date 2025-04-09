@@ -43,16 +43,6 @@ class CompositeRecorder(AbstractRecorder):
         if recorder in self.recorders:
             self.recorders.remove(recorder)
 
-    def get_output_path(self) -> Path:
-        """
-        @brief Get the path where the recording will be saved.
-
-        In this case, returns the base project directory.
-
-        @return Path to the output directory.
-        """
-        # By default, return the path to the main project directory
-        return Path.home() / "project" / self.project_name / "Log" / self.date_str
 
     def setup(self) -> None:
         """
