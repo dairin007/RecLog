@@ -128,18 +128,6 @@ class CompositeRecorder(AbstractRecorder):
         for recorder in self.recorders:
             recorder.wait_for_completion()
 
-    def print_completion_status(self, results: Dict[str, Path], quiet: bool = False) -> None:
-        if quiet:
-            return
-            
-        for recorder in self.recorders:
-            recorder_type = type(recorder).__name__
-            reporter = self._get_reporter_for_recorder(recorder)
-            
-            if reporter:
-                output_path = results.get(recorder_type, None)
-                reporter.print_recording_complete(output_path)
-
     def _get_reporter_for_recorder(self, recorder) -> Optional['Reporter']:
         recorder_type = type(recorder).__name__
         if recorder_type == "TmuxAsciinemaRecorder":
@@ -167,7 +155,5 @@ class CompositeRecorder(AbstractRecorder):
                 # Get reporter for this recorder
                 reporter = self._get_reporter_for_recorder(recorder)
                 if reporter:
-                    # Print completion status
-                    reporter.print_recording_complete()
                     # Print detailed results
                     reporter.print_recorder_results(results[recorder_type])

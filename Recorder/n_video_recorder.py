@@ -246,5 +246,5 @@ class VideoRecorder(AbstractRecorder):
         Since video recording runs in a separate thread, this method
         checks if the recording thread is still active and waits for it to finish.
         """
-        # video recorder isrequired this method
+        # video recorder is not required this method
         pass
