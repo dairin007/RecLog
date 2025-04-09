@@ -5,6 +5,9 @@ from Recorder.ab_recorder import AbstractRecorder
 from Reporter.ab_reporter import AbstractReporter
 from Reporter.tmux_asciinema_reporter import TmuxSessionReporter
 from Reporter.video_reporter import VideoReporter
+from Recorder.asciinema_recorder import TmuxAsciinemaRecorder
+from Recorder.video_recorder import VideoRecorder
+
 
 class CompositeRecorder(AbstractRecorder):
     """
@@ -24,6 +27,8 @@ class CompositeRecorder(AbstractRecorder):
         """
         self.recorders: List[AbstractRecorder] = recorders or []
         self._is_recording=False
+        self._tmux_recorder = None
+        self._video_recorder = None
 
     def add_recorder(self, recorder: AbstractRecorder) -> None:
         """
@@ -33,6 +38,11 @@ class CompositeRecorder(AbstractRecorder):
         """
         if recorder not in self.recorders:
             self.recorders.append(recorder)
+            if isinstance(recorder, TmuxAsciinemaRecorder):
+                self._tmux_recorder = recorder
+            elif isinstance(recorder, VideoRecorder):
+                self._video_recorder = recorder
+
 
     def remove_recorder(self, recorder: AbstractRecorder) -> None:
         """
@@ -42,7 +52,10 @@ class CompositeRecorder(AbstractRecorder):
         """
         if recorder in self.recorders:
             self.recorders.remove(recorder)
-
+            if self._tmux_recorder == recorder:
+                self._tmux_recorder = None
+            elif self._video_recorder == recorder:
+                self._video_recorder = None
 
     def setup(self) -> None:
         """
@@ -102,9 +115,6 @@ class CompositeRecorder(AbstractRecorder):
         """
         # Start with basic session info
         info = {
-            # "project_name": self.project_name,
-            # "date": self.date_str,
-            # "time": self.time_str,
             "recorders": [],
         }
 
@@ -123,8 +133,16 @@ class CompositeRecorder(AbstractRecorder):
 
         Calls wait_for_completion() on all managed recorders.
         """
-        for recorder in self.recorders:
-            recorder.wait_for_completion()
+        if self._tmux_recorder:
+            print("[*] Waiting for tmux session to end...")
+            self._tmux_recorder.wait_for_completion()
+            print("[✓] Tmux session ended")
+            if self._video_recorder and self._video_recorder.is_recording:
+                print("[*] Stopping video recording after tmux session ended...")
+                self._video_recorder.stop_recording()
+        else:
+            for recorder in self.recorders:
+                recorder.wait_for_completion()
 
     def _get_reporter_for_recorder(self, recorder) -> Optional['AbstractReporter']:
         recorder_type = type(recorder).__name__

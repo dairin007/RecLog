@@ -194,7 +194,6 @@ class VideoRecorder(AbstractRecorder):
         # Reset internal state for next recording
         self._process = None
         self._thread = None
-        self._output_file = None
 
         return result
 
