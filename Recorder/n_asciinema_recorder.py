@@ -110,7 +110,7 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         self._is_recording = True
         self.asciinema_recorder.start_recording(self.tmux_session_name)
 
-    def stop_recording(self) -> Optional[Path]:
+    def stop_recording(self):
         """
         @brief Stop the ongoing recording
         

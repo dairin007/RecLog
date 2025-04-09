@@ -156,7 +156,7 @@ class VideoRecorder(AbstractRecorder):
             print(f"\nError during video recording: {e}")
             self._is_recording = False
     
-    def stop_recording(self) -> Optional[Path]:
+    def stop_recording(self):
         """
         @brief Stop the ongoing recording
         
