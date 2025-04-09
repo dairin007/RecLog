@@ -37,7 +37,6 @@ class TmuxSessionManager:
                 self.session_name,
                 "zsh"
             ], check=True, capture_output=True, text=True)
-            print(f"Created tmux session: {self.session_name}")
         except FileNotFoundError as e:
             raise FileNotFoundError(f"Required configuration file not found: {e}") from e
         except subprocess.CalledProcessError as e:
@@ -73,8 +72,6 @@ class TmuxSessionManager:
         # Poll until the session ends to ensure complete recording
         while True:
             if not self.session_exists():
-                # Session no longer exists
-                print("Tmux Session is closed.")
                 break
             time.sleep(1)
             

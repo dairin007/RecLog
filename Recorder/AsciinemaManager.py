@@ -27,7 +27,6 @@ class AsciinemaManager:
         @param tmux_session Name of the tmux session to record.
         @throws RuntimeError If recording fails to start.
         """
-        print(f"Starting asciinema recording to: {self.output_file}")
 
         # Use asciinema to record the tmux session interaction
         # This is a blocking call that returns when the session ends

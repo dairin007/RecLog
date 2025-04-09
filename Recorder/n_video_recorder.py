@@ -113,9 +113,6 @@ class VideoRecorder(AbstractRecorder):
         self._thread.daemon = True
         self._thread.start()
         
-        # Ensure full line is printed with newline
-        print(f"Screen recording started. Output directory: {self.output_dir}")
-    
     def _recording_thread(self) -> None:
         """
         @brief Thread function that handles the recording process
@@ -141,8 +138,6 @@ class VideoRecorder(AbstractRecorder):
             str(self._output_file)
         ]
         
-        # Force output to a complete line with newline
-        print(f"Starting video recording: {self._output_file}")
 
         # Start ffmpeg process for screen recording
         try:
@@ -179,7 +174,6 @@ class VideoRecorder(AbstractRecorder):
         # Terminate the ffmpeg process
         try:
             if self._process.stdin and not self._process.stdin.closed:
-                print("Sending 'q' to ffmpeg for graceful shutdown...")
                 self._process.stdin.write('q\n')
                 self._process.stdin.flush()
             else:
@@ -206,9 +200,16 @@ class VideoRecorder(AbstractRecorder):
             hours, remainder = divmod(duration.seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
         
-            print(f"Recording stopped. Total duration: {hours}h {minutes}m {seconds}s")
-            print(f"Recorded video: {recorded_file_path}")
-            result = recorded_file_path
+            result = {
+            "outputs": {
+                "video": recorded_file_path
+            },
+            "metadata": {
+                "project_name": self.project_name,
+                "duration": str(datetime.now() - self._start_time),
+                "time": f"{hours}h_{minutes}m_{seconds}s"
+            }
+        }
         elif final_file_exists:
             print(f"Recorded File '{recorded_file_path}' is Empty.")
             result = {}
@@ -221,15 +222,7 @@ class VideoRecorder(AbstractRecorder):
         self._thread = None
         self._output_file = None
 
-        return {
-            "outputs": {
-                "video": recorded_file_path
-            },
-            "metadata": {
-                "project_name": self.project_name,
-                "duration": str(datetime.now() - self._start_time),
-            }
-        }
+        return result
         
     def get_session_info(self) -> Dict[str, Any]:
         """
