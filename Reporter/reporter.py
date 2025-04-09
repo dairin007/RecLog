@@ -35,13 +35,24 @@ class Reporter(ABC):
         """
         pass
 
+    @abstractmethod
+    def print_recording_end(self) -> None:
+        """
+        @brief Print information about the recording end.
+        """
+        pass
+
 class TmuxSessionReporter(Reporter):
     """
     @brief Reporter for tmux session recording.
     
     Handles reporting of tmux session recording progress and results.
     """
-    
+    def print_recording_end(self) -> None:
+        """
+        @brief Print information about the tmux recording end.
+        """
+        print("[✓] Asciinema recording completed.")
     def print_session_start(self, session_info: Dict[str, Any]) -> None:
         """
         @brief Print information about the starting tmux session.
@@ -106,3 +117,8 @@ class VideoReporter(Reporter):
         if "video" in outputs:
             video_path = outputs["video"]
             print(f"- Video recording: {video_path}")
+    def print_recording_end(self) -> None:
+        """
+        @brief Print information about the video recording end.
+        """
+        print("[✓] Video recording completed.")

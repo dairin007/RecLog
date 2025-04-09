@@ -82,7 +82,7 @@ class AbstractRecorder(ABC):
         Different recorder implementations may define completion differently.
         """
         pass
-    
+
     @property
     def is_recording(self) -> bool:
         """

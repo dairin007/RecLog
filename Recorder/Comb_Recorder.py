@@ -88,7 +88,14 @@ class CompositeRecorder(AbstractRecorder):
         # Stop each recorder and collect output paths
         results = {}
         for recorder in self.recorders:
+            # Get reporter for this recorder
+            reporter = self._get_reporter_for_recorder(recorder)
+
             recorder_result = recorder.stop_recording()
+            # Print end message if reporter exists
+            if reporter:
+                reporter.print_recording_end()
+                
             if recorder_result:
                 # Use the class name as the key
                 recorder_type = type(recorder).__name__
