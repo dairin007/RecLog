@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from Recorder.Recorder import AbstractRecorder
+from Reporter.reporter import Reporter
 
 
 class CompositeRecorder(AbstractRecorder):
@@ -80,20 +81,20 @@ class CompositeRecorder(AbstractRecorder):
         @return Dictionary mapping recorder type names to output paths.
         """
         if not self._is_recording:
-            return None
+            return {}
             
         self._is_recording = False
         
         # Stop each recorder and collect output paths
         results = {}
         for recorder in self.recorders:
-            output_path = recorder.stop_recording()
-            if output_path:
+            recorder_result = recorder.stop_recording()
+            if recorder_result:
                 # Use the class name as the key
                 recorder_type = type(recorder).__name__
-                results[recorder_type] = output_path
+                results[recorder_type] = recorder_result
         
-        return results if results else None
+        return results
     
     def get_session_info(self) -> Dict[str, Any]:
         """
@@ -126,3 +127,65 @@ class CompositeRecorder(AbstractRecorder):
         """
         for recorder in self.recorders:
             recorder.wait_for_completion()
+
+    def print_completion_status(self, results: Dict[str, Path], quiet: bool = False) -> None:
+        if quiet:
+            return
+            
+        for recorder in self.recorders:
+            recorder_type = type(recorder).__name__
+            reporter = self._get_reporter_for_recorder(recorder)
+            
+            if reporter:
+                output_path = results.get(recorder_type, None)
+                reporter.print_recording_complete(output_path)
+
+    def print_output_locations(self, results: Dict[str, Path], quiet: bool = False) -> None:
+        if quiet:
+            return
+            
+        for recorder in self.recorders:
+            recorder_type = type(recorder).__name__
+            reporter = self._get_reporter_for_recorder(recorder)
+            
+            if reporter and recorder_type in results:
+                output_path = results[recorder_type]
+                
+                # TmuxAsciinemaRecorderの場合は複数の出力場所がある
+                if recorder_type == "TmuxAsciinemaRecorder" and hasattr(reporter, 'print_output_locations'):
+                    reporter.print_output_locations(recorder.get_session_info())
+                # VideoRecorderの場合は単一の出力ファイル
+                elif output_path and hasattr(reporter, 'print_output_location'):
+                    reporter.print_output_location(output_path)
+
+    def _get_reporter_for_recorder(self, recorder) -> Optional['Reporter']:
+        recorder_type = type(recorder).__name__
+        if recorder_type == "TmuxAsciinemaRecorder":
+            from Reporter.reporter import TmuxSessionReporter
+            return TmuxSessionReporter()
+        elif recorder_type == "VideoRecorder":
+            from Reporter.reporter import VideoReporter
+            return VideoReporter()
+        return None
+    
+    def print_results(self, results: Dict[str, Dict[str, Any]], quiet: bool = False) -> None:
+        """
+        @brief Print results from all recorders.
+        
+        @param results Results dictionary from stop_recording
+        @param quiet Flag to minimize output
+        """
+        if quiet:
+            return
+            
+        for recorder in self.recorders:
+            recorder_type = type(recorder).__name__
+            
+            if recorder_type in results:
+                # Get reporter for this recorder
+                reporter = self._get_reporter_for_recorder(recorder)
+                if reporter:
+                    # Print completion status
+                    reporter.print_recording_complete()
+                    # Print detailed results
+                    reporter.print_recorder_results(results[recorder_type])

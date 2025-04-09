@@ -43,7 +43,14 @@ class Reporter(ABC):
         @param output_path Path to the output.
         """
         pass
-
+    @abstractmethod
+    def print_recorder_results(self, results: Dict[str, Any]) -> None:
+        """
+        @brief Print recording results.
+        
+        @param results Dictionary containing recording outputs and metadata.
+        """
+        pass
 
 class TmuxSessionReporter(Reporter):
     """
@@ -102,6 +109,21 @@ class TmuxSessionReporter(Reporter):
         self.print_output_location(session_info["zsh_history_file"])
         self.print_output_location(session_info["tmux_log_dir"])
 
+    def print_recorder_results(self, results: Dict[str, Any]) -> None:
+        """
+        @brief Print tmux recording results.
+        """
+        outputs = results.get("outputs", {})
+        
+        print("\nRecording outputs:")
+        for output_type, path in outputs.items():
+            if output_type == "asciinema":
+                print(f"- Asciinema recording: {path}")
+            elif output_type == "zsh_history":
+                print(f"- Zsh history: {path}")
+            elif output_type == "tmux_logs":
+                print(f"- Tmux logs: {path}/*.log")
+
 
 class VideoReporter(Reporter):
     """
@@ -144,3 +166,13 @@ class VideoReporter(Reporter):
         @param output_path Path to the video output file.
         """
         print(f"- Video recording: {output_path}")
+
+    def print_recorder_results(self, results: Dict[str, Any]) -> None:
+        """
+        @brief Print video recording results.
+        """
+        outputs = results.get("outputs", {})
+        
+        if "video" in outputs:
+            video_path = outputs["video"]
+            print(f"- Video recording: {video_path}")

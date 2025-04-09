@@ -121,15 +121,21 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         @return Path to the recorded asciinema file.
         """
         if not self._is_recording:
-            return None
+            return {}
             
         self._is_recording = False
         self._cleanup_tmux()
         
-        if self._output_file and self._output_file.exists():
-            return self._output_file
-        
-        return None
+        return {
+            "outputs": {
+                "asciinema": self.paths.asciinema_file,
+                "zsh_history": self.paths.zsh_history_file,
+                "tmux_logs": self.paths.tmux_log_dir
+            },
+            "metadata": {
+                "project_name": self.project_name,
+            }
+        }
 
     def wait_for_completion(self) -> None:
         """

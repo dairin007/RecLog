@@ -56,7 +56,7 @@ class AbstractRecorder(ABC):
         pass
     
     @abstractmethod
-    def stop_recording(self) -> Optional[Path]:
+    def stop_recording(self) -> Dict[str, Any]:
         """
         @brief Stop the ongoing recording.
         

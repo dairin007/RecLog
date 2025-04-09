@@ -171,7 +171,7 @@ class VideoRecorder(AbstractRecorder):
             print("No recording in progress")
             self._process = None
             self._thread = None
-            return None
+            return {}
         
         self._is_recording = False
         recorded_file_path = self._output_file
@@ -211,16 +211,25 @@ class VideoRecorder(AbstractRecorder):
             result = recorded_file_path
         elif final_file_exists:
             print(f"Recorded File '{recorded_file_path}' is Empty.")
-            result = None
+            result = {}
         else:
             print("Recorded File is not Generated.")
-            result = None
+            result = {}
         
         # Reset internal state for next recording
         self._process = None
         self._thread = None
         self._output_file = None
-        return result
+
+        return {
+            "outputs": {
+                "video": recorded_file_path
+            },
+            "metadata": {
+                "project_name": self.project_name,
+                "duration": str(datetime.now() - self._start_time),
+            }
+        }
         
     def get_session_info(self) -> Dict[str, Any]:
         """

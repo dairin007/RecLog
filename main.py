@@ -93,21 +93,9 @@ def main() -> None:
     # Stop all recorders and collect results
     results = composite_recorder.stop_recording()
 
-    # Display completion information
-    if not args.quiet:
-        tmux_reporter.print_recording_complete()
-        
-        # Print output locations for tmux
-        tmux_info = composite_recorder.get_session_info().get("TmuxAsciinemaRecorder", {})
-        if isinstance(tmux_reporter, TmuxSessionReporter):
-            tmux_reporter.print_output_locations(tmux_info)
-    
-        # Print video output location if video was recorded
-        if args.video and "VideoRecorder" in results:
-            output_video = results["VideoRecorder"]
-            if output_video:
-                video_reporter.print_output_location(output_video)
-        print("=" * 60)
+    composite_recorder.print_results(results, quiet=args.quiet)
+
+    print("=" * 60)
 
     # Clean up temporary resources
     if not args.keep_tmp:
