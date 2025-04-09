@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, List
-
+import signal
 
 class VideoRecorder:
     """
@@ -94,41 +94,37 @@ class VideoRecorder:
         """
         # Get quality settings
         video_settings = self._get_video_settings()
+
+        # Build the ffmpeg command
+        # This works on most Linux systems with X11
+        cmd = [
+            "ffmpeg",
+            "-f", "x11grab",      # X11 display grabbing
+            "-framerate", str(self.framerate),
+            "-i", ":0.0",         # Display identifier
+            "-r", str(self.framerate),
+            "-vf", "crop=iw:floor(ih/2)*2",
+            *video_settings,
+            "-pix_fmt", "yuv420p",  # Ensure compatibility
+            "-f", "mp4",
+            "-loglevel", "error",   # Reduce ffmpeg output to errors only
+            str(self._output_file)
+        ]
         
+        # Force output to a complete line with newline
+        print(f"Starting video recording: {self._output_file}")
+
         # Start ffmpeg process for screen recording
         try:
-            # Build the ffmpeg command
-            # This works on most Linux systems with X11
-            cmd = [
-                "ffmpeg",
-                "-f", "x11grab",      # X11 display grabbing
-                "-framerate", str(self.framerate),
-                "-i", ":0.0",         # Display identifier
-                "-r", str(self.framerate),
-                "-vf", "crop=iw:floor(ih/2)*2",
-                *video_settings,
-                "-pix_fmt", "yuv420p",  # Ensure compatibility
-                "-loglevel", "error",   # Reduce ffmpeg output to errors only
-                str(self._output_file)
-            ]
-            
-            # Force output to a complete line with newline
-            print(f"Starting video recording: {self._output_file}")
-            
             # Using subprocess.PIPE for stderr to properly capture errors
             self._process = subprocess.Popen(
                 cmd,
+                stdin=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
             )
             
-            # Wait for the process to complete (when stop_recording is called)
-            stdout, stderr = self._process.communicate()
-            if self._process.returncode != 0 and self._recording:
-                # Ensure proper line formatting for error output
-                print("\n--- FFmpeg Error Output ---")
-                print(stderr)
-                print("-------------------------")
+            self._process.wait()
             
         except Exception as e:
             # Ensure proper line breaks in error messages
@@ -141,44 +137,38 @@ class VideoRecorder:
         
         @return Path to the recorded video file, or None if no recording was in progress
         """
-        is_process_running = self._process and self._process.poll() is None
-
-        if not self._recording or not is_process_running:
+        if not self._recording or not self._process or self._process.poll() is not None:
             print("No recording in progress")
             self._process = None
             self._thread = None
             return None
         
-        if self._recording:
-            self._recording = False
+        self._recording = False
         recorded_file_path = self._output_file
         
         # Terminate the ffmpeg process
-        if self._process and self._process.poll() is None:
-            try:
-                # Send SIGTERM to ffmpeg (more graceful than kill)
-                self._process.terminate()
-                
-                # Give it time to clean up
-                time.sleep(2)
-                
-                # Force kill if still running
-                if self._process.poll() is None:
-                    print("Force ffmpeg kill.")
-                    self._process.kill()
-                    self._process.wait()
-            except Exception as e:
-                print(f"\nError stopping recording: {e}")
+        try:
+            if self._process.stdin and not self._process.stdin.closed:
+                print("Sending 'q' to ffmpeg for graceful shutdown...")
+                self._process.stdin.write('q\n')
+                self._process.stdin.flush()
+            else:
+                print("stdin is already closed, cannot send 'q'")
 
-        # Wait for the thread to complete
+            self._process.wait(timeout=10)
+
+        except subprocess.TimeoutExpired:
+            print("Timeout waiting for ffmpeg to stop. Forcing kill.")
+            self._process.kill()
+            self._process.wait()
+        except Exception as e:
+            print(f"Error stopping ffmpeg: {e}")
+
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=5)
 
         final_file_exists = recorded_file_path and recorded_file_path.exists()
         final_file_has_size = final_file_exists and recorded_file_path.stat().st_size > 0
-        
-        # Ensure a clean line break before printing status
-        print()  # Add a blank line for better separation
         
         if final_file_has_size:
             # Calculate recording duration
