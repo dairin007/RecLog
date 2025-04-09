@@ -68,15 +68,6 @@ class VideoRecorder(AbstractRecorder):
         # Use medium quality if specified quality not found
         return quality_presets.get(self.video_quality, quality_presets["medium"])
     
-    def _get_output_filename(self) -> Path:
-        """
-        @brief Generate output filename for the video
-        
-        @return Path to the output file
-        """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return self.output_dir / f"{self.project_name}_{timestamp}.mp4"
-    
     def setup(self) -> None:
         """
         @brief Perform any necessary setup before recording can begin.
@@ -131,7 +122,6 @@ class VideoRecorder(AbstractRecorder):
             str(self._output_file)
         ]
         
-
         # Start ffmpeg process for screen recording
         try:
             # Using subprocess.PIPE for stderr to properly capture errors
