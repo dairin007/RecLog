@@ -1,6 +1,6 @@
 from pathlib import Path
-from app_config import AppConfig
-from session_paths import SessionPaths
+from settingcode.app_config import AppConfig
+from settingcode.session_paths import SessionPaths
 
 
 class ConfigGenerator:

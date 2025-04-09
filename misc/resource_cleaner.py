@@ -1,6 +1,6 @@
 import shutil
 from pathlib import Path
-from tmux_session import TmuxSessionManager
+from tmux.tmux_session import TmuxSessionManager
 
 
 class ResourceCleaner:

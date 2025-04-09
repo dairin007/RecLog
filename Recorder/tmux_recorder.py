@@ -2,11 +2,11 @@ from datetime import datetime
 import atexit
 from typing import Optional, Dict, Any
 
-from app_config import AppConfig
-from session_paths import SessionPaths, generate_session_paths
-from config_generator import ConfigGenerator
-from tmux_session import TmuxSessionManager
-from asciinemarecorder import AsciinemaRecorder
+from settingcode.app_config import AppConfig
+from settingcode.session_paths import SessionPaths, generate_session_paths
+from misc.config_generator import ConfigGenerator
+from tmux.tmux_session import TmuxSessionManager
+from Recorder.asciinemarecorder import AsciinemaRecorder
 
 
 class TmuxAsciinemaRecorder:
