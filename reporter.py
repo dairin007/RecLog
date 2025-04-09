@@ -101,9 +101,6 @@ class TmuxSessionReporter(Reporter):
         self.print_output_location(session_info["asciinema_file"])
         self.print_output_location(session_info["zsh_history_file"])
         self.print_output_location(session_info["tmux_log_dir"])
-        
-        print("\nSession completed. Resources will be cleaned up on exit.")
-        print("=" * 60)
 
 
 class VideoReporter(Reporter):

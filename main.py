@@ -8,6 +8,7 @@ from app_config import AppConfig
 from tmux_recorder import TmuxAsciinemaRecorder
 from video_record import VideoRecorder
 from reporter import Reporter, TmuxSessionReporter, VideoReporter
+from resource_cleaner import ResourceCleaner
 
 
 def get_video_dir(project_name: str) -> Path:
@@ -54,7 +55,7 @@ def main() -> None:
     # Initialize the tmux recorder
     recorder = TmuxAsciinemaRecorder(
         project_name=args.project, 
-        tmux_session=args.session,
+        tmux_session_name=args.session,
         config=config
     )
     
@@ -127,8 +128,9 @@ def main() -> None:
         if video_enabled and output_video:
             video_reporter.print_output_location(output_video)
             
-        print("\nSession completed. Resources will be cleaned up on exit.")
         print("=" * 60)
+
+    ResourceCleaner(config.tmp_dir).cleanup()
 
 
 if __name__ == "__main__":

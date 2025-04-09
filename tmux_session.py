@@ -10,13 +10,13 @@ class TmuxSessionManager:
     Handles creation, monitoring, and termination of tmux sessions.
     """
     
-    def __init__(self, session_name: str):
+    def __init__(self, tmux_session_name: str):
         """
         @brief Initialize the tmux session manager.
         
         @param session_name Name of the tmux session to manage.
         """
-        self.session_name = session_name
+        self.session_name = tmux_session_name
         
     def create_session(self, config_path: Path) -> None:
         """
