@@ -1,4 +1,3 @@
-import atexit
 from typing import Optional, Dict, Any
 from pathlib import Path
 
@@ -72,19 +71,6 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
             "zsh_history_file": self.paths.zsh_history_file,
             "tmux_log_dir": self.paths.tmux_log_dir
         }
-
-    def run(self) -> None:
-        """
-        @brief Main method to execute the recording process.
-        
-        Creates the tmux session, starts asciinema recording,
-        and waits for the session to complete.
-        """
-        # Core recording workflow
-        self.setup()
-        self.start_recording()
-        self._wait_for_tmux_exit()
-        self.stop_recording()
 
     def setup(self) -> None:
         """

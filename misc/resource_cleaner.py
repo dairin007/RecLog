@@ -1,13 +1,12 @@
 import shutil
 from pathlib import Path
-from tmux.tmux_session import TmuxSessionManager
 
 
 class ResourceCleaner:
     """
     @brief Handles cleanup of resources created during recording.
     
-    Responsible for terminating tmux sessions and removing temporary files.
+    Responsible for removing temporary files.
     """
     
     def __init__(self, tmp_dir: Path):
@@ -23,8 +22,6 @@ class ResourceCleaner:
         """
         @brief Clean up resources created during recording.
         
-        Terminates the tmux session if it's still running and removes
-        temporary directories created during the session.
         """
         # Remove temporary directory
         try:

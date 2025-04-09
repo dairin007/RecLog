@@ -140,24 +140,6 @@ class CompositeRecorder(AbstractRecorder):
                 output_path = results.get(recorder_type, None)
                 reporter.print_recording_complete(output_path)
 
-    def print_output_locations(self, results: Dict[str, Path], quiet: bool = False) -> None:
-        if quiet:
-            return
-            
-        for recorder in self.recorders:
-            recorder_type = type(recorder).__name__
-            reporter = self._get_reporter_for_recorder(recorder)
-            
-            if reporter and recorder_type in results:
-                output_path = results[recorder_type]
-                
-                # TmuxAsciinemaRecorderの場合は複数の出力場所がある
-                if recorder_type == "TmuxAsciinemaRecorder" and hasattr(reporter, 'print_output_locations'):
-                    reporter.print_output_locations(recorder.get_session_info())
-                # VideoRecorderの場合は単一の出力ファイル
-                elif output_path and hasattr(reporter, 'print_output_location'):
-                    reporter.print_output_location(output_path)
-
     def _get_reporter_for_recorder(self, recorder) -> Optional['Reporter']:
         recorder_type = type(recorder).__name__
         if recorder_type == "TmuxAsciinemaRecorder":

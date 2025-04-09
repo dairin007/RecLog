@@ -1,6 +1,5 @@
 import subprocess
 import threading
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -247,4 +246,5 @@ class VideoRecorder(AbstractRecorder):
         Since video recording runs in a separate thread, this method
         checks if the recording thread is still active and waits for it to finish.
         """
+        # video recorder isrequired this method
         pass
