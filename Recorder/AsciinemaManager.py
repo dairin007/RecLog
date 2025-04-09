@@ -2,7 +2,7 @@ import subprocess
 from pathlib import Path
 
 
-class AsciinemaRecorder:
+class AsciinemaManager:
     """
     @brief Handles asciinema recording of tmux sessions.
     

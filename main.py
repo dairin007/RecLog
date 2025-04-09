@@ -3,28 +3,17 @@ import atexit
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
+import sys
+sys.dont_write_bytecode = True
 
 from settingcode.app_config import AppConfig
-from Recorder.tmux_recorder import TmuxAsciinemaRecorder
-from Recorder.video_record import VideoRecorder
+from Recorder.Recorder import AbstractRecorder
+from Recorder.n_asciinema_recorder import TmuxAsciinemaRecorder
+from Recorder.n_video_recorder import VideoRecorder
+from Recorder.Comb_Recorder import CompositeRecorder
 from Reporter.reporter import Reporter, TmuxSessionReporter, VideoReporter
 from misc.resource_cleaner import ResourceCleaner
 
-
-def get_video_dir(project_name: str) -> Path:
-    """
-    @brief Generate the video output directory path
-    
-    @param project_name Name of the project
-    @return Path to the video directory
-    """
-    now = datetime.now()
-    date_str = now.strftime("%Y%m%d")
-    
-    video_dir = Path.home() / "project" / project_name / "Log" / date_str / "video"
-    video_dir.mkdir(parents=True, exist_ok=True)
-    
-    return video_dir
 
 def main() -> None:
     """
@@ -51,86 +40,87 @@ def main() -> None:
 
     # Initialize configuration
     config = AppConfig.from_defaults()
-    
-    # Initialize the tmux recorder
-    recorder = TmuxAsciinemaRecorder(
+    composite_recorder = CompositeRecorder(project_name=args.project)
+
+    # Add tmux recorder
+    tmux_recorder = TmuxAsciinemaRecorder(
         project_name=args.project, 
         tmux_session_name=args.session,
         config=config
     )
-    
-    # Initialize reporters using the abstract class
-    session_reporter: Reporter = TmuxSessionReporter()
-    video_reporter: Reporter = VideoReporter()
-    
-    # For debugging: optionally retain temporary files
-    if args.keep_tmp:
-        atexit.unregister(recorder.cleanup_resources)
-        print("[DEBUG]: Disable Cleanup Tmp_Dir")
+    composite_recorder.add_recorder(tmux_recorder)
 
-    # Get session information
-    session_info = recorder.get_session_info()
-    
-    # Check if video recording is enabled
-    video_enabled = args.video
-    
-    # Display start information (unless quiet mode is enabled)
-    if not args.quiet:
-        session_reporter.print_session_start(session_info)
-        
-        # Print video recording info if enabled
-        if video_enabled:
-            video_reporter.print_session_start(session_info)
-    
-    # Initialize and start video recorder if enabled
+    # Add video recorder if enabled
     video_recorder: Optional[VideoRecorder] = None
-    output_video: Optional[Path] = None
-    
-    if video_enabled:
-        video_dir = get_video_dir(args.project)
-        
+    if args.video:
         video_recorder = VideoRecorder(
-            output_dir=video_dir,
             project_name=args.project,
             video_quality=args.video_quality,
             framerate=args.video_framerate
         )
-        
-        # Start video recording before tmux session
-        if not args.quiet:
-            video_reporter.print_recording_start()
-        video_recorder.start_recording()
+        composite_recorder.add_recorder(video_recorder)
+
+    # Initialize reporters using the abstract class
+    tmux_reporter: Reporter = TmuxSessionReporter()
+    video_reporter: Reporter = VideoReporter()
     
-    # Display recording start information for tmux session
+    # Get session information
+    session_info = composite_recorder.get_session_info()
+
+    # Display start information (unless quiet mode is enabled)
     if not args.quiet:
-        session_reporter.print_recording_start()
+        tmux_reporter.print_session_start(session_info["TmuxAsciinemaRecorder"])
+        
+        # Print video recording info if enabled
+        if args.video:
+            video_reporter.print_session_start(session_info["VideoRecorder"])
+
+    # Setup recorders
+    composite_recorder.setup()
     
-    # Perform the tmux recording
-    recorder.run()
+    # Start all recorders
+    if not args.quiet:
+        if args.video:
+            video_reporter.print_recording_start()
+        tmux_reporter.print_recording_start()
     
-    # Stop video recording after tmux session ends
-    if video_enabled and video_recorder:
-        if not args.quiet:
-            print("[+] Stopping video recording...")
+    
+    # Run the complete recording process
+    # For video + tmux: video recording starts, then tmux session runs, then both stop
+    if args.video:
+        # Start video first
+        video_recorder.start_recording()
+        
+        # Run tmux session (blocking until session ends)
+        tmux_recorder.run()
+        
+        # Stop video after tmux ends
         output_video = video_recorder.stop_recording()
+        
         if not args.quiet and output_video:
             video_reporter.print_recording_complete(output_video)
-    
+    else:
+        # Just run tmux session
+        tmux_recorder.run()
+
     # Display completion information
     if not args.quiet:
-        session_reporter.print_recording_complete()
+        tmux_reporter.print_recording_complete()
         
-        # Print output locations for tmux session
-        if isinstance(session_reporter, TmuxSessionReporter):
-            session_reporter.print_output_locations(session_info)
+        # Print output locations
+        tmux_info = session_info["TmuxAsciinemaRecorder"]
+        if isinstance(tmux_reporter, TmuxSessionReporter):
+            tmux_reporter.print_output_locations(tmux_info)
             
         # Print video output location if video was recorded
-        if video_enabled and output_video:
-            video_reporter.print_output_location(output_video)
+        if args.video and video_recorder and video_recorder.output_file:
+            video_reporter.print_output_location(video_recorder.output_file)
             
         print("=" * 60)
 
-    ResourceCleaner(config.tmp_dir).cleanup()
+    # Clean up temporary resources
+    if not args.keep_tmp:
+        ResourceCleaner(config.tmp_dir).cleanup()
 
 
 if __name__ == "__main__":

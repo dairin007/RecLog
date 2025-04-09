@@ -1,15 +1,16 @@
-from datetime import datetime
 import atexit
 from typing import Optional, Dict, Any
+from pathlib import Path
 
 from settingcode.app_config import AppConfig
 from settingcode.session_paths import SessionPaths, generate_session_paths
 from misc.config_generator import ConfigGenerator
 from tmux.tmux_session import TmuxSessionManager
 from Recorder.AsciinemaManager import AsciinemaManager
+from Recorder.Recorder import AbstractRecorder
 
 
-class TmuxAsciinemaRecorder:
+class TmuxAsciinemaRecorder(AbstractRecorder):
     """
     @brief Main class for recording tmux sessions with asciinema.
 
@@ -24,13 +25,10 @@ class TmuxAsciinemaRecorder:
         @param tmux_session Optional custom tmux session name. If None, auto-generated.
         @param config Optional AppConfig instance. If None, defaults are used.
         """
-        self.project_name: str = project_name
+        super().__init__(project_name)
+        
+        # Config
         self.config: AppConfig = config or AppConfig.from_defaults()
-
-        # Generate timestamps for organized file storage and unique session names
-        now: datetime = datetime.now()
-        self.date_str: str = now.strftime("%Y%m%d")
-        self.time_str: str = now.strftime("%H%M%S")
 
         # Generate a unique session name to avoid conflicts with existing sessions if not provided
         self.tmux_session_name: str = tmux_session_name or f"{project_name}_{self.date_str}_{self.time_str}"
@@ -45,11 +43,22 @@ class TmuxAsciinemaRecorder:
         # Initialize components
         self.config_generator = ConfigGenerator(self.config, self.paths)
         self.tmux_manager = TmuxSessionManager(self.tmux_session_name)
-        self.Asciinema_manager = AsciinemaManager(self.paths.asciinema_file)
+        self.asciinema_recorder = AsciinemaManager(self.paths.asciinema_file)
+        
+        # Assign output file from paths
+        self._output_file = self.paths.asciinema_file
 
         # Register cleanup to ensure tmux sessions and tmp settings don't remain after program exit
         atexit.register(self._stop_recording)
 
+    def get_output_path(self) -> Path:
+        """
+        @brief Get the path where the recording will be saved.
+        
+        @return Path to the output file.
+        """
+        return self.paths.asciinema_file
+    
     def get_session_info(self) -> Dict[str, Any]:
         """
         @brief Get informations on Current Recording Session
@@ -74,13 +83,16 @@ class TmuxAsciinemaRecorder:
         and waits for the session to complete.
         """
         # Core recording workflow
-        self._setup_tmux_session()
-        self._perform_recording()
-        self._finalize_recording()
+        self.setup()
+        self.start_recording()
+        self._wait_for_tmux_exit()
+        self.stop_recording()
 
-    def _setup_tmux_session(self) -> None:
+    def setup(self) -> None:
         """
-        @brief Setup Tmux Session
+        @brief Setup Tmux Session for recording
+        
+        Generates necessary configuration and creates the tmux session.
         """
         # Generate configs
         tmux_conf_path = self.config_generator.generate_tmux_conf()
@@ -88,32 +100,44 @@ class TmuxAsciinemaRecorder:
         
         # Create tmux session
         self.tmux_manager.create_session(tmux_conf_path)
-
-    def _perform_recording(self) -> None:
-        """
-        @brief Recording start by asciinema
-        """
-        # Start recording with asciinema
-        self._start_recording()
-        
-        # Wait for the session to complete
-        self._wait_for_tmux_exit()
-        
-    def _finalize_recording(self) -> None:
-        """
-        @brief Finalize the recording process.
-        """
-        # Nothing special needed here as cleanup is handled by atexit
-        pass
-
-    def _stop_recording(self):
-        self._cleanup_tmux()
-
-    def _start_recording(self) -> None:
+    
+    def start_recording(self) -> None:
         """
         @brief Start asciinema recording of the tmux session.
         """
-        self.Asciinema_manager.start_recording(self.tmux_session_name)
+        if self._is_recording:
+            print("Recording is already in progress")
+            return
+            
+        self._is_recording = True
+        self.asciinema_recorder.start_recording(self.tmux_session_name)
+
+    def stop_recording(self) -> Optional[Path]:
+        """
+        @brief Stop the ongoing recording
+        
+        For tmux asciinema recording, this method doesn't need to do much as
+        the recording ends when the tmux session ends, but it's included for
+        interface consistency.
+        
+        @return Path to the recorded asciinema file.
+        """
+        if not self._is_recording:
+            return None
+            
+        self._is_recording = False
+        self._cleanup_tmux()
+        
+        if self._output_file and self._output_file.exists():
+            return self._output_file
+        
+        return None
+
+    def _stop_recording(self):
+        """
+        @brief Method called by atexit to ensure cleanup
+        """
+        self._cleanup_tmux()
 
     def _wait_for_tmux_exit(self) -> None:
         """
