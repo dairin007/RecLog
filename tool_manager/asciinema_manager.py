@@ -5,25 +5,25 @@ from pathlib import Path
 class AsciinemaManager:
     """
     @brief Handles asciinema recording of tmux sessions.
-    
+
     Manages the asciinema recording process for capturing terminal sessions.
     """
-    
+
     def __init__(self, output_file: Path):
         """
         @brief Initialize the recorder.
-        
+
         @param output_file Path where the recording will be saved.
         """
         self.output_file = output_file
-        
+
     def start_recording(self, tmux_session: str) -> None:
         """
         @brief Start asciinema recording of the tmux session.
-        
+
         Launches asciinema to record the tmux session and save the output
         to the configured file.
-        
+
         @param tmux_session Name of the tmux session to record.
         @throws RuntimeError If recording fails to start.
         """

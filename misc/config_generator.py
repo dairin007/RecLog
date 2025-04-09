@@ -6,28 +6,28 @@ from settingcode.app_session_config import AppSessionConfig
 class ConfigGenerator:
     """
     @brief Handles generation of configuration files for tmux and zsh.
-    
+
     Responsible for creating temporary configuration files that enable
     logging while preserving user settings.
     """
-    
+
     def __init__(self, static_config: AppStaticSettings, session_config: AppSessionConfig):
         """
         @brief Initialize the configuration generator.
-        
+
         @param config AppConfig instance with path information.
         @param paths SessionPaths instance with session-specific paths.
         """
         self.config = static_config
         self.paths = session_config
-        
+
     def generate_tmux_conf(self) -> Path:
         """
         @brief Generate a dynamic tmux configuration file.
-        
+
         Creates a tmux configuration that includes the default settings
         plus additional hooks for logging pane output.
-        
+
         @return Path to the generated configuration file.
         """
         default_tmux_conf: Path = self.config.default_tmux_conf
@@ -56,16 +56,16 @@ set-environment -g ZDOTDIR {self.config.tmp_dir}
         # Write to a separate file to avoid modifying user's original configuration
         with open(tmux_dynamic_path, 'w') as f:
             f.write(full_conf)
-            
+
         return tmux_dynamic_path
 
     def generate_zdotdir(self) -> Path:
         """
         @brief Generate a temporary zsh configuration.
-        
+
         Creates a .zshrc file in the temporary directory that sources
         the user's default configuration and sets up history logging.
-        
+
         @return Path to the directory containing the generated zsh configuration.
         """
         tmp_zshrc: Path = self.config.tmp_dir / ".zshrc"
@@ -82,5 +82,5 @@ setopt INC_APPEND_HISTORY
 setopt SHARE_HISTORY
 """
         tmp_zshrc.write_text(content)
-        
+
         return self.config.tmp_dir

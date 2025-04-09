@@ -6,7 +6,7 @@ from Reporter.ab_reporter import AbstractReporter
 class TmuxSessionReporter(AbstractReporter):
     """
     @brief Reporter for tmux session recording.
-    
+
     Handles reporting of tmux session recording progress and results.
     """
     def print_recording_end(self) -> None:
@@ -17,13 +17,13 @@ class TmuxSessionReporter(AbstractReporter):
     def print_session_start(self, session_info: Dict[str, Any]) -> None:
         """
         @brief Print information about the starting tmux session.
-        
+
         @param session_info Dictionary containing session details.
         """
-        print("=" * 60) 
+        print("=" * 60)
         print(f"Recording session for project: {session_info['project_name']}")
         print(f"Date: {session_info['date']}, Time: {session_info['time']}")
-    
+
     def print_recording_start(self) -> None:
         """
         @brief Print information about the recording session by asciinema.
@@ -35,7 +35,7 @@ class TmuxSessionReporter(AbstractReporter):
         @brief Print tmux recording results.
         """
         outputs = results.get("outputs", {})
-        
+
         print("\nRecording outputs:")
         for output_type, path in outputs.items():
             if output_type == "asciinema":

@@ -19,11 +19,11 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
     def __init__(self, static_config: AppStaticSettings, session_config: AppSessionConfig, tmux_session_name: Optional[str] = None ) -> None:
         """
         @brief Initialize a new recorder instance.
-        
+
         @param project_name Name of the project being recorded.
         @param tmux_session Optional custom tmux session name. If None, auto-generated.
         @param config Optional AppConfig instance. If None, defaults are used.
-        """        
+        """
         # Config
         self.static_config: AppStaticSettings = static_config
         self.session_config: AppSessionConfig = session_config
@@ -35,25 +35,25 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         self.config_generator = ConfigGenerator(self.static_config, self.session_config)
         self.tmux_manager = TmuxSessionManager(self.tmux_session_name)
         self.asciinema_recorder = AsciinemaManager(self.session_config.asciinema_file)
-        
+
         # Assign output file from paths
         self._output_file = self.session_config.asciinema_file
-        
+
         self._is_recording=False
 
 
     def get_output_path(self) -> Path:
         """
         @brief Get the path where the recording will be saved.
-        
+
         @return Path to the output file.
         """
         return self.session_config.asciinema_file
-    
+
     def get_session_info(self) -> Dict[str, Any]:
         """
         @brief Get informations on Current Recording Session
-        
+
         @return Dictionary containing session details.
         """
         return {
@@ -69,7 +69,7 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
     def setup(self) -> None:
         """
         @brief Setup Tmux Session for recording
-        
+
         Generates necessary configuration and creates the tmux session.
         """
         # Generate configs
@@ -78,7 +78,7 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
 
         # Create tmux session
         self.tmux_manager.create_session(tmux_conf_path)
-    
+
     def start_recording(self) -> None:
         """
         @brief Start asciinema recording of the tmux session.
@@ -86,26 +86,26 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         if self._is_recording:
             print("Recording is already in progress")
             return
-            
+
         self._is_recording = True
         self.asciinema_recorder.start_recording(self.tmux_session_name)
 
     def stop_recording(self):
         """
         @brief Stop the ongoing recording
-        
+
         For tmux asciinema recording, this method doesn't need to do much as
         the recording ends when the tmux session ends, but it's included for
         interface consistency.
-        
+
         @return Path to the recorded asciinema file.
         """
         if not self._is_recording:
             return {}
-            
+
         self._is_recording = False
         self._cleanup_tmux()
-        
+
         return {
             "outputs": {
                 "asciinema": self.session_config.asciinema_file,
@@ -120,17 +120,17 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
     def wait_for_completion(self) -> None:
         """
         @brief Wait for the tmux session to complete.
-        
+
         For tmux sessions, completion means the tmux session has terminated.
         This is a blocking call.
         """
         if self._is_recording:
             self.tmux_manager.wait_for_exit()
-    
+
     def _cleanup_tmux(self) -> None:
         """
         @brief Stop all processes and clean up resources.
-        
+
         This method is called via atexit to ensure resources
         are released even if the program exits unexpectedly.
         """

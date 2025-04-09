@@ -16,7 +16,7 @@ from settingcode.app_session_config import AppSessionConfig
 def main() -> None:
     """
     @brief Entry point for the application.
-    
+
     Parses command-line arguments and initializes the recording process.
     """
     # Set up command-line argument parsing
@@ -25,7 +25,7 @@ def main() -> None:
     parser.add_argument("--session", help="tmux session name (default: project_name_date)")
     parser.add_argument("--keep_tmp", action="store_true", help="save tmp dir")
     parser.add_argument("--quiet", action="store_true", help="minimize output messages")
-    
+
     # Video recording options
     video_group = parser.add_argument_group("Video Recording Options")
     video_group.add_argument("--video", action="store_true", help="enable video recording")
@@ -33,7 +33,7 @@ def main() -> None:
                             help="video recording quality (default: medium)")
     video_group.add_argument("--video-framerate", type=int, default=15,
                             help="video recording framerate (default: 15)")
-    
+
     args = parser.parse_args()
 
     # Initialize configuration
@@ -61,21 +61,21 @@ def main() -> None:
     # Initialize reporters using the abstract class
     tmux_reporter: TmuxSessionReporter = TmuxSessionReporter()
     video_reporter: VideoReporter = VideoReporter()
-    
+
     # Get session information
     session_info = composite_recorder.get_session_info()
 
     # Display start information (unless quiet mode is enabled)
     if not args.quiet:
         tmux_reporter.print_session_start(session_info["TmuxAsciinemaRecorder"])
-        
+
         # Print video recording info if enabled
         if args.video:
             video_reporter.print_session_start(session_info["VideoRecorder"])
 
     # Setup recorders
     composite_recorder.setup()
-    
+
     # Start all recorders
     if not args.quiet:
         if args.video:
@@ -86,7 +86,7 @@ def main() -> None:
     composite_recorder.start_recording()
 
     # Wait for recordings to complete (blocking until tmux session ends)
-    composite_recorder.wait_for_completion()    
+    composite_recorder.wait_for_completion()
 
     # Stop all recorders and collect results
     results = composite_recorder.stop_recording()

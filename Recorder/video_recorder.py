@@ -12,14 +12,14 @@ from settingcode.app_session_config import AppSessionConfig
 class VideoRecorder(AbstractRecorder):
     """
     @brief Class for handling full-screen recording functionality
-    
+
     Uses ffmpeg to record the screen as a single video file.
     """
-    
+
     def __init__(self, static_config: AppStaticSettings, session_config: AppSessionConfig,output_dir: Optional[Path] = None):
         """
         @brief Initialize the video recorder
-        
+
         @param project_name Project name (used in filenames)
         @param video_quality Encoder quality setting (low, medium, high)
         @param framerate Capture framerate (lower means smaller file size)
@@ -31,11 +31,11 @@ class VideoRecorder(AbstractRecorder):
 
         self.video_quality = 'low'
         self.framerate = 15
-        
+
         # Set output directory
         self.output_dir = output_dir or self.session_config.video_dir
         self._output_file=self.session_config.video_file
-        
+
         # Internal state
         self._process: Optional[subprocess.Popen] = None
         self._thread: Optional[threading.Thread] = None
@@ -43,11 +43,11 @@ class VideoRecorder(AbstractRecorder):
 
         self._is_recording=False
 
-        
+
     def get_output_path(self) -> Path:
         """
         @brief Get the path where the recording will be saved.
-        
+
         @return Path to the output file.
         """
         return self._output_file
@@ -55,7 +55,7 @@ class VideoRecorder(AbstractRecorder):
     def _get_video_settings(self) -> List[str]:
         """
         @brief Get ffmpeg settings based on quality setting
-        
+
         @return List of ffmpeg parameters
         """
         # Quality preset mapping
@@ -64,43 +64,43 @@ class VideoRecorder(AbstractRecorder):
             "medium": ["-c:v", "libx264", "-preset", "medium", "-crf", "23"],
             "high": ["-c:v", "libx264", "-preset", "slow", "-crf", "18"]
         }
-        
+
         # Use medium quality if specified quality not found
         return quality_presets.get(self.video_quality, quality_presets["medium"])
-    
+
     def setup(self) -> None:
         """
         @brief Perform any necessary setup before recording can begin.
-        
+
         Creates the output directory if it doesn't exist.
         """
         # Create output directory if it doesn't exist
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
     def start_recording(self) -> None:
         """
         @brief Start the screen recording process
-        
+
         Launches ffmpeg in a separate thread to record the screen
         """
         if self.is_recording:
             print("Recording is already in progress")
             return
-        
+
         # Setup before recording
         self.setup()
-        
+
         self._is_recording = True
-        
+
         # Start recording in a separate thread
         self._thread = threading.Thread(target=self._recording_thread)
         self._thread.daemon = True
         self._thread.start()
-        
+
     def _recording_thread(self) -> None:
         """
         @brief Thread function that handles the recording process
-        
+
         Manages ffmpeg process for continuous recording
         """
         # Get quality settings
@@ -121,7 +121,7 @@ class VideoRecorder(AbstractRecorder):
             "-loglevel", "error",   # Reduce ffmpeg output to errors only
             str(self._output_file)
         ]
-        
+
         # Start ffmpeg process for screen recording
         try:
             # Using subprocess.PIPE for stderr to properly capture errors
@@ -131,18 +131,18 @@ class VideoRecorder(AbstractRecorder):
                 stderr=subprocess.PIPE,
                 text=True,
             )
-            
+
             self._process.wait()
-            
+
         except Exception as e:
             # Ensure proper line breaks in error messages
             print(f"\nError during video recording: {e}")
             self._is_recording = False
-    
+
     def stop_recording(self):
         """
         @brief Stop the ongoing recording
-        
+
         @return Path to the recorded video file, or None if no recording was in progress
         """
         if not self._is_recording or not self._process or self._process.poll() is not None:
@@ -150,10 +150,10 @@ class VideoRecorder(AbstractRecorder):
             self._process = None
             self._thread = None
             return {}
-        
+
         self._is_recording = False
         recorded_file_path = self._output_file
-        
+
         # Terminate the ffmpeg process
         try:
             if self._process.stdin and not self._process.stdin.closed:
@@ -176,13 +176,13 @@ class VideoRecorder(AbstractRecorder):
 
         final_file_exists = recorded_file_path and recorded_file_path.exists()
         final_file_has_size = final_file_exists and recorded_file_path.stat().st_size > 0
-        
+
         if final_file_has_size:
             # Calculate recording duration
             duration = datetime.now() - self._start_time
             hours, remainder = divmod(duration.seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
-        
+
             result = {
             "outputs": {
                 "video": recorded_file_path
@@ -199,14 +199,14 @@ class VideoRecorder(AbstractRecorder):
         else:
             print("Recorded File is not Generated.")
             result = {}
-        
+
         # Reset internal state for next recording
         self._process = None
         self._thread = None
         self._output_file = None
 
         return result
-        
+
     def get_session_info(self) -> Dict[str, Any]:
         """
         @brief Get information about the current recording session.
@@ -222,11 +222,11 @@ class VideoRecorder(AbstractRecorder):
             "output_file": str(self._output_file) if self._output_file else None,
             "output_dir": str(self.output_dir)
         }
-    
+
     def wait_for_completion(self) -> None:
         """
         @brief Wait for the video recording to complete.
-        
+
         Since video recording runs in a separate thread, this method
         checks if the recording thread is still active and waits for it to finish.
         """
