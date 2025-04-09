@@ -1,9 +1,10 @@
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from Recorder.Recorder import AbstractRecorder
-from Reporter.reporter import Reporter
-
+from Recorder.ab_recorder import AbstractRecorder
+from Reporter.ab_reporter import AbstractReporter
+from Reporter.tmux_asciinema_reporter import TmuxSessionReporter
+from Reporter.video_reporter import VideoReporter
 
 class CompositeRecorder(AbstractRecorder):
     """
@@ -135,13 +136,11 @@ class CompositeRecorder(AbstractRecorder):
         for recorder in self.recorders:
             recorder.wait_for_completion()
 
-    def _get_reporter_for_recorder(self, recorder) -> Optional['Reporter']:
+    def _get_reporter_for_recorder(self, recorder) -> Optional['AbstractReporter']:
         recorder_type = type(recorder).__name__
         if recorder_type == "TmuxAsciinemaRecorder":
-            from Reporter.reporter import TmuxSessionReporter
             return TmuxSessionReporter()
         elif recorder_type == "VideoRecorder":
-            from Reporter.reporter import VideoReporter
             return VideoReporter()
         return None
     

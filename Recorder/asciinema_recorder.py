@@ -1,12 +1,12 @@
 from typing import Optional, Dict, Any
 from pathlib import Path
 
-from settingcode.app_config import AppConfig
-from settingcode.session_paths import SessionPaths, generate_session_paths
+from settingcode.app_static_config import AppStaticSettings
+from settingcode.app_session_config import AppSessionConfig, generate_session_paths
 from misc.config_generator import ConfigGenerator
-from tmux.tmux_session import TmuxSessionManager
-from Recorder.AsciinemaManager import AsciinemaManager
-from Recorder.Recorder import AbstractRecorder
+from tool_manager.tmux_manager import TmuxSessionManager
+from tool_manager.asciinema_manager import AsciinemaManager
+from Recorder.ab_recorder import AbstractRecorder
 
 
 class TmuxAsciinemaRecorder(AbstractRecorder):
@@ -16,7 +16,7 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
     Coordinates the components for tmux session management,
     configuration generation, and recording.
     """
-    def __init__(self, project_name: str, tmux_session_name: Optional[str] = None, config: Optional[AppConfig] = None) -> None:
+    def __init__(self, project_name: str, tmux_session_name: Optional[str] = None, config: Optional[AppStaticSettings] = None) -> None:
         """
         @brief Initialize a new recorder instance.
         
@@ -27,13 +27,13 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         super().__init__(project_name)
         
         # Config
-        self.config: AppConfig = config or AppConfig.from_defaults()
+        self.config: AppStaticSettings = config or AppStaticSettings.from_defaults()
 
         # Generate a unique session name to avoid conflicts with existing sessions if not provided
         self.tmux_session_name: str = tmux_session_name or f"{project_name}_{self.date_str}_{self.time_str}"
 
         # Initialize path structure for organized log storage
-        self.paths: SessionPaths = generate_session_paths(
+        self.paths: AppSessionConfig = generate_session_paths(
             project_name=self.project_name,
             date_str=self.date_str,
             time_str=self.time_str

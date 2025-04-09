@@ -1,6 +1,6 @@
 from pathlib import Path
-from settingcode.app_config import AppConfig
-from settingcode.session_paths import SessionPaths
+from settingcode.app_static_config import AppStaticSettings
+from settingcode.app_session_config import AppSessionConfig
 
 
 class ConfigGenerator:
@@ -11,7 +11,7 @@ class ConfigGenerator:
     logging while preserving user settings.
     """
     
-    def __init__(self, config: AppConfig, paths: SessionPaths):
+    def __init__(self, config: AppStaticSettings, paths: AppSessionConfig):
         """
         @brief Initialize the configuration generator.
         

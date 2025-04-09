@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 @dataclass
-class SessionPaths:
+class AppSessionConfig:
     """
     @brief Class for organizing session-related file paths.
     
@@ -18,7 +18,7 @@ class SessionPaths:
     tmux_log_dir: Path
 
 
-def generate_session_paths(project_name: str, date_str: str, time_str: str) -> SessionPaths:
+def generate_session_paths(project_name: str, date_str: str, time_str: str) -> AppSessionConfig:
     """
     @brief Generate all required paths for the recording session.
     
@@ -44,7 +44,7 @@ def generate_session_paths(project_name: str, date_str: str, time_str: str) -> S
     asciinema_file: Path = asciinema_dir / f"{time_str}.cast"
     zsh_history_file: Path = zsh_dir / f"{time_str}.zsh_history"
 
-    return SessionPaths(
+    return AppSessionConfig(
         project_name=project_name,
         date_str=date_str,
         time_str=time_str,

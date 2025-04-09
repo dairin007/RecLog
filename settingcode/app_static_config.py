@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class AppConfig:
+class AppStaticSettings:
     """
     @brief Configuration class for the application.
     
@@ -18,7 +18,7 @@ class AppConfig:
     default_tmux_conf: Path
     
     @classmethod
-    def from_defaults(cls, base_dir: Optional[Path] = None) -> 'AppConfig':
+    def from_defaults(cls, base_dir: Optional[Path] = None) -> 'AppStaticSettings':
         """
         @brief Create an AppConfig instance with default values.
         

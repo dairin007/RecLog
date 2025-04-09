@@ -1,17 +1,14 @@
 import argparse
-import atexit
-from pathlib import Path
-from datetime import datetime
 from typing import Optional
 import sys
 sys.dont_write_bytecode = True
 
-from settingcode.app_config import AppConfig
-from Recorder.Recorder import AbstractRecorder
-from Recorder.n_asciinema_recorder import TmuxAsciinemaRecorder
-from Recorder.n_video_recorder import VideoRecorder
-from Recorder.Comb_Recorder import CompositeRecorder
-from Reporter.reporter import Reporter, TmuxSessionReporter, VideoReporter
+from settingcode.app_static_config import AppStaticSettings
+from Recorder.asciinema_recorder import TmuxAsciinemaRecorder
+from Recorder.video_recorder import VideoRecorder
+from Recorder.composite_recorder import CompositeRecorder
+from Reporter.tmux_asciinema_reporter import TmuxSessionReporter
+from Reporter.video_reporter import VideoReporter
 from misc.resource_cleaner import ResourceCleaner
 
 
@@ -39,7 +36,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Initialize configuration
-    config = AppConfig.from_defaults()
+    config = AppStaticSettings.from_defaults()
     composite_recorder = CompositeRecorder(project_name=args.project)
 
     # Add tmux recorder
@@ -61,8 +58,8 @@ def main() -> None:
         composite_recorder.add_recorder(video_recorder)
 
     # Initialize reporters using the abstract class
-    tmux_reporter: Reporter = TmuxSessionReporter()
-    video_reporter: Reporter = VideoReporter()
+    tmux_reporter: TmuxSessionReporter = TmuxSessionReporter()
+    video_reporter: VideoReporter = VideoReporter()
     
     # Get session information
     session_info = composite_recorder.get_session_info()
