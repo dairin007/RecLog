@@ -48,8 +48,6 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         # Assign output file from paths
         self._output_file = self.paths.asciinema_file
 
-        # Register cleanup to ensure tmux sessions and tmp settings don't remain after program exit
-        atexit.register(self._stop_recording)
 
     def get_output_path(self) -> Path:
         """
@@ -97,7 +95,7 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         # Generate configs
         tmux_conf_path = self.config_generator.generate_tmux_conf()
         self.config_generator.generate_zdotdir()
-        
+
         # Create tmux session
         self.tmux_manager.create_session(tmux_conf_path)
     
@@ -133,17 +131,15 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         
         return None
 
-    def _stop_recording(self):
+    def wait_for_completion(self) -> None:
         """
-        @brief Method called by atexit to ensure cleanup
+        @brief Wait for the tmux session to complete.
+        
+        For tmux sessions, completion means the tmux session has terminated.
+        This is a blocking call.
         """
-        self._cleanup_tmux()
-
-    def _wait_for_tmux_exit(self) -> None:
-        """
-        @brief Wait for the tmux session to terminate.
-        """
-        self.tmux_manager.wait_for_exit()
+        if self._is_recording:
+            self.tmux_manager.wait_for_exit()
     
     def _cleanup_tmux(self) -> None:
         """

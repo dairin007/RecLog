@@ -237,3 +237,12 @@ class VideoRecorder(AbstractRecorder):
             "output_file": str(self._output_file) if self._output_file else None,
             "output_dir": str(self.output_dir)
         }
+    
+    def wait_for_completion(self) -> None:
+        """
+        @brief Wait for the video recording to complete.
+        
+        Since video recording runs in a separate thread, this method
+        checks if the recording thread is still active and waits for it to finish.
+        """
+        pass

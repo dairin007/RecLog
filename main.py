@@ -83,39 +83,30 @@ def main() -> None:
         if args.video:
             video_reporter.print_recording_start()
         tmux_reporter.print_recording_start()
-    
-    
-    # Run the complete recording process
-    # For video + tmux: video recording starts, then tmux session runs, then both stop
-    if args.video:
-        # Start video first
-        video_recorder.start_recording()
-        
-        # Run tmux session (blocking until session ends)
-        tmux_recorder.run()
-        
-        # Stop video after tmux ends
-        output_video = video_recorder.stop_recording()
-        
-        if not args.quiet and output_video:
-            video_reporter.print_recording_complete(output_video)
-    else:
-        # Just run tmux session
-        tmux_recorder.run()
+
+    # Start recording processes
+    composite_recorder.start_recording()
+
+    # Wait for recordings to complete (blocking until tmux session ends)
+    composite_recorder.wait_for_completion()    
+
+    # Stop all recorders and collect results
+    results = composite_recorder.stop_recording()
 
     # Display completion information
     if not args.quiet:
         tmux_reporter.print_recording_complete()
         
-        # Print output locations
-        tmux_info = session_info["TmuxAsciinemaRecorder"]
+        # Print output locations for tmux
+        tmux_info = composite_recorder.get_session_info().get("TmuxAsciinemaRecorder", {})
         if isinstance(tmux_reporter, TmuxSessionReporter):
             tmux_reporter.print_output_locations(tmux_info)
-            
+    
         # Print video output location if video was recorded
-        if args.video and video_recorder and video_recorder.output_file:
-            video_reporter.print_output_location(video_recorder.output_file)
-            
+        if args.video and "VideoRecorder" in results:
+            output_video = results["VideoRecorder"]
+            if output_video:
+                video_reporter.print_output_location(output_video)
         print("=" * 60)
 
     # Clean up temporary resources

@@ -72,6 +72,16 @@ class AbstractRecorder(ABC):
         @return Dictionary containing session details.
         """
         pass
+
+    @abstractmethod
+    def wait_for_completion(self) -> None:
+        """
+        @brief Wait for the recording to complete.
+        
+        This is a blocking call that returns when the recording is logically complete.
+        Different recorder implementations may define completion differently.
+        """
+        pass
     
     @property
     def is_recording(self) -> bool:

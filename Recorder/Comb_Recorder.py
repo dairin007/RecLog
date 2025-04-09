@@ -117,3 +117,12 @@ class CompositeRecorder(AbstractRecorder):
             info["recorders"].append(recorder_type)
             
         return info
+
+    def wait_for_completion(self) -> None:
+        """
+        @brief Wait for all managed recorders to complete.
+        
+        Calls wait_for_completion() on all managed recorders.
+        """
+        for recorder in self.recorders:
+            recorder.wait_for_completion()
