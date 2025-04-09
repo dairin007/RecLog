@@ -53,9 +53,8 @@ def main() -> None:
     # Add video recorder if enabled
     if args.video:
         video_recorder = VideoRecorder(
-            project_name=args.project,
-            video_quality=args.video_quality,
-            framerate=args.video_framerate
+            static_config=static_config,
+            session_config=session_config,
         )
         composite_recorder.add_recorder(video_recorder)
 

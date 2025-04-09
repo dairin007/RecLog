@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 
 from Recorder.ab_recorder import AbstractRecorder
+from settingcode.app_static_config import AppStaticSettings
+from settingcode.app_session_config import AppSessionConfig
 
 
 class VideoRecorder(AbstractRecorder):
@@ -14,10 +16,7 @@ class VideoRecorder(AbstractRecorder):
     Uses ffmpeg to record the screen as a single video file.
     """
     
-    def __init__(self, project_name: str, 
-                 video_quality: str = "medium",
-                 framerate: int = 15,
-                 output_dir: Optional[Path] = None):
+    def __init__(self, static_config: AppStaticSettings, session_config: AppSessionConfig,output_dir: Optional[Path] = None):
         """
         @brief Initialize the video recorder
         
@@ -26,27 +25,24 @@ class VideoRecorder(AbstractRecorder):
         @param framerate Capture framerate (lower means smaller file size)
         @param output_dir Optional custom directory to save recordings
         """
-        super().__init__(project_name)
-        
-        self.video_quality = video_quality
-        self.framerate = framerate
+        # Config
+        self.static_config: AppStaticSettings = static_config
+        self.session_config: AppSessionConfig = session_config
+
+        self.video_quality = 'low'
+        self.framerate = 15
         
         # Set output directory
-        self.output_dir = output_dir or self._get_default_output_dir()
+        self.output_dir = output_dir or self.session_config.video_dir
+        self._output_file=self.session_config.video_file
         
         # Internal state
         self._process: Optional[subprocess.Popen] = None
         self._thread: Optional[threading.Thread] = None
         self._start_time = datetime.now()
 
-    def _get_default_output_dir(self) -> Path:
-        """
-        @brief Get the default output directory for video recordings
-        
-        @return Path to the default output directory
-        """
-        video_dir = Path.home() / "project" / self.project_name / "Log" / self.date_str / "video"
-        return video_dir
+        self._is_recording=False
+
         
     def get_output_path(self) -> Path:
         """
@@ -54,7 +50,7 @@ class VideoRecorder(AbstractRecorder):
         
         @return Path to the output file.
         """
-        return self._output_file or self._get_output_filename()
+        return self._output_file
 
     def _get_video_settings(self) -> List[str]:
         """
@@ -104,8 +100,6 @@ class VideoRecorder(AbstractRecorder):
         self.setup()
         
         self._is_recording = True
-        self._start_time = datetime.now()
-        self._output_file = self._get_output_filename()
         
         # Start recording in a separate thread
         self._thread = threading.Thread(target=self._recording_thread)
@@ -204,7 +198,7 @@ class VideoRecorder(AbstractRecorder):
                 "video": recorded_file_path
             },
             "metadata": {
-                "project_name": self.project_name,
+                "project_name": self.session_config.project_name,
                 "duration": str(datetime.now() - self._start_time),
                 "time": f"{hours}h_{minutes}m_{seconds}s"
             }
@@ -226,13 +220,13 @@ class VideoRecorder(AbstractRecorder):
     def get_session_info(self) -> Dict[str, Any]:
         """
         @brief Get information about the current recording session.
-        
+
         @return Dictionary containing session details.
         """
         return {
-            "project_name": self.project_name,
-            "date": self.date_str,
-            "time": self.time_str,
+            "project_name": self.session_config.project_name,
+            "date": self.session_config.date_str,
+            "time": self.session_config.time_str,
             "video_quality": self.video_quality,
             "framerate": self.framerate,
             "output_file": str(self._output_file) if self._output_file else None,

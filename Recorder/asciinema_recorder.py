@@ -38,6 +38,8 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         
         # Assign output file from paths
         self._output_file = self.session_config.asciinema_file
+        
+        self._is_recording=False
 
 
     def get_output_path(self) -> Path:
@@ -55,7 +57,7 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         @return Dictionary containing session details.
         """
         return {
-            "project_name": self.project_name,
+            "project_name": self.session_config.project_name,
             "date": self.session_config.date_str,
             "time": self.session_config.time_str,
             "tmux_session": self.tmux_session_name,
@@ -111,7 +113,7 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
                 "tmux_logs": self.session_config.tmux_log_dir
             },
             "metadata": {
-                "project_name": self.project_name,
+                "project_name": self.session_config.project_name,
             }
         }
 

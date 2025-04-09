@@ -22,8 +22,8 @@ class CompositeRecorder(AbstractRecorder):
         @param project_name Name of the project being recorded.
         @param recorders List of recorder instances to be managed.
         """
-        super().__init__(project_name)
         self.recorders: List[AbstractRecorder] = recorders or []
+        self._is_recording=False
         
     def add_recorder(self, recorder: AbstractRecorder) -> None:
         """
@@ -112,10 +112,10 @@ class CompositeRecorder(AbstractRecorder):
         """
         # Start with basic session info
         info = {
-            "project_name": self.project_name,
-            "date": self.date_str,
-            "time": self.time_str,
-            "recorders": []
+            # "project_name": self.project_name,
+            # "date": self.date_str,
+            # "time": self.time_str,
+            "recorders": [],
         }
         
         # Add info from each recorder

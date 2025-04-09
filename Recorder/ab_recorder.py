@@ -11,22 +11,13 @@ class AbstractRecorder(ABC):
     This ensures consistency across different types of recorders.
     """
     
-    def __init__(self, project_name: str):
+    def __init__(self):
         """
         @brief Initialize a new recorder instance.
         
         @param project_name Name of the project being recorded.
         """
-        self.project_name: str = project_name
-        
-        # Generate timestamps for organized file storage
-        now: datetime = datetime.now()
-        self.date_str: str = now.strftime("%Y%m%d")
-        self.time_str: str = now.strftime("%H%M%S")
-        
-        # Record state
-        self._is_recording: bool = False
-        self._output_file: Optional[Path] = None
+        pass
 
     @abstractmethod
     def get_output_path(self) -> Path:
