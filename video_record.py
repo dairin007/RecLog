@@ -83,6 +83,7 @@ class VideoRecorder:
         self._thread.daemon = True
         self._thread.start()
         
+        # Ensure full line is printed with newline
         print(f"Screen recording started. Output directory: {self.output_dir}")
     
     def _recording_thread(self) -> None:
@@ -107,25 +108,31 @@ class VideoRecorder:
                 "-vf", "crop=iw:floor(ih/2)*2",
                 *video_settings,
                 "-pix_fmt", "yuv420p",  # Ensure compatibility
+                "-loglevel", "error",   # Reduce ffmpeg output to errors only
                 str(self._output_file)
             ]
             
+            # Force output to a complete line with newline
             print(f"Starting video recording: {self._output_file}")
+            
+            # Using subprocess.PIPE for stderr to properly capture errors
             self._process = subprocess.Popen(
                 cmd,
-                stderr=subprocess.PIPE, # stderrをパイプに接続
-                text=True # エラー出力をテキストとして扱う
+                stderr=subprocess.PIPE,
+                text=True
             )
             
             # Wait for the process to complete (when stop_recording is called)
-            stdout, stderr = self._process.communicate() # wait()の代わりにcommunicate()を使う
+            stdout, stderr = self._process.communicate()
             if self._process.returncode != 0 and self._recording:
-                print("--- FFmpeg Error Output ---")
+                # Ensure proper line formatting for error output
+                print("\n--- FFmpeg Error Output ---")
                 print(stderr)
                 print("-------------------------")
             
         except Exception as e:
-            print(f"Error during video recording: {e}")
+            # Ensure proper line breaks in error messages
+            print(f"\nError during video recording: {e}")
             self._recording = False
     
     def stop_recording(self):
@@ -138,7 +145,7 @@ class VideoRecorder:
 
         if not self._recording or not is_process_running:
             print("No recording in progress")
-            self._process = None # クリーンアップ
+            self._process = None
             self._thread = None
             return None
         
@@ -161,7 +168,7 @@ class VideoRecorder:
                     self._process.kill()
                     self._process.wait()
             except Exception as e:
-                print(f"Error stopping recording: {e}")
+                print(f"\nError stopping recording: {e}")
 
         # Wait for the thread to complete
         if self._thread and self._thread.is_alive():
@@ -169,21 +176,24 @@ class VideoRecorder:
 
         final_file_exists = recorded_file_path and recorded_file_path.exists()
         final_file_has_size = final_file_exists and recorded_file_path.stat().st_size > 0
+        
+        # Ensure a clean line break before printing status
+        print()  # Add a blank line for better separation
+        
         if final_file_has_size:
-
             # Calculate recording duration
             duration = datetime.now() - self._start_time
             hours, remainder = divmod(duration.seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
         
             print(f"Recording stopped. Total duration: {hours}h {minutes}m {seconds}s")
-            print(f"Recorded video: {self._output_file}")
+            print(f"Recorded video: {recorded_file_path}")
             result = recorded_file_path
         elif final_file_exists:
-            print(f"Recorded File '{recorded_file_path}' is Empty.") # Recorded file is empty.
+            print(f"Recorded File '{recorded_file_path}' is Empty.")
             result = None
         else:
-            print("Recorded File is not Generated.") # Recorded file was not generated.
+            print("Recorded File is not Generated.")
             result = None
         
         # Reset internal state for next recording
