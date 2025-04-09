@@ -2,7 +2,7 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 
 from settingcode.app_static_config import AppStaticSettings
-from settingcode.app_session_config import AppSessionConfig, generate_session_paths
+from settingcode.app_session_config import AppSessionConfig
 from misc.config_generator import ConfigGenerator
 from tool_manager.tmux_manager import TmuxSessionManager
 from tool_manager.asciinema_manager import AsciinemaManager
@@ -16,36 +16,28 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
     Coordinates the components for tmux session management,
     configuration generation, and recording.
     """
-    def __init__(self, project_name: str, tmux_session_name: Optional[str] = None, config: Optional[AppStaticSettings] = None) -> None:
+    def __init__(self, static_config: AppStaticSettings, session_config: AppSessionConfig, tmux_session_name: Optional[str] = None ) -> None:
         """
         @brief Initialize a new recorder instance.
         
         @param project_name Name of the project being recorded.
         @param tmux_session Optional custom tmux session name. If None, auto-generated.
         @param config Optional AppConfig instance. If None, defaults are used.
-        """
-        super().__init__(project_name)
-        
+        """        
         # Config
-        self.config: AppStaticSettings = config or AppStaticSettings.from_defaults()
+        self.static_config: AppStaticSettings = static_config
+        self.session_config: AppSessionConfig = session_config
 
         # Generate a unique session name to avoid conflicts with existing sessions if not provided
-        self.tmux_session_name: str = tmux_session_name or f"{project_name}_{self.date_str}_{self.time_str}"
-
-        # Initialize path structure for organized log storage
-        self.paths: AppSessionConfig = generate_session_paths(
-            project_name=self.project_name,
-            date_str=self.date_str,
-            time_str=self.time_str
-        )
+        self.tmux_session_name: str = tmux_session_name or f"{session_config.project_name}_{session_config.date_str}_{session_config.time_str}"
 
         # Initialize components
-        self.config_generator = ConfigGenerator(self.config, self.paths)
+        self.config_generator = ConfigGenerator(self.static_config, self.session_config)
         self.tmux_manager = TmuxSessionManager(self.tmux_session_name)
-        self.asciinema_recorder = AsciinemaManager(self.paths.asciinema_file)
+        self.asciinema_recorder = AsciinemaManager(self.session_config.asciinema_file)
         
         # Assign output file from paths
-        self._output_file = self.paths.asciinema_file
+        self._output_file = self.session_config.asciinema_file
 
 
     def get_output_path(self) -> Path:
@@ -54,7 +46,7 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         
         @return Path to the output file.
         """
-        return self.paths.asciinema_file
+        return self.session_config.asciinema_file
     
     def get_session_info(self) -> Dict[str, Any]:
         """
@@ -64,12 +56,12 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         """
         return {
             "project_name": self.project_name,
-            "date": self.paths.date_str,
-            "time": self.paths.time_str,
+            "date": self.session_config.date_str,
+            "time": self.session_config.time_str,
             "tmux_session": self.tmux_session_name,
-            "asciinema_file": self.paths.asciinema_file,
-            "zsh_history_file": self.paths.zsh_history_file,
-            "tmux_log_dir": self.paths.tmux_log_dir
+            "asciinema_file": self.session_config.asciinema_file,
+            "zsh_history_file": self.session_config.zsh_history_file,
+            "tmux_log_dir": self.session_config.tmux_log_dir
         }
 
     def setup(self) -> None:
@@ -114,9 +106,9 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         
         return {
             "outputs": {
-                "asciinema": self.paths.asciinema_file,
-                "zsh_history": self.paths.zsh_history_file,
-                "tmux_logs": self.paths.tmux_log_dir
+                "asciinema": self.session_config.asciinema_file,
+                "zsh_history": self.session_config.zsh_history_file,
+                "tmux_logs": self.session_config.tmux_log_dir
             },
             "metadata": {
                 "project_name": self.project_name,

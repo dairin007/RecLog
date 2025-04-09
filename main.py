@@ -10,6 +10,7 @@ from Recorder.composite_recorder import CompositeRecorder
 from Reporter.tmux_asciinema_reporter import TmuxSessionReporter
 from Reporter.video_reporter import VideoReporter
 from misc.resource_cleaner import ResourceCleaner
+from settingcode.app_session_config import AppSessionConfig
 
 
 def main() -> None:
@@ -36,19 +37,20 @@ def main() -> None:
     args = parser.parse_args()
 
     # Initialize configuration
-    config = AppStaticSettings.from_defaults()
+    static_config = AppStaticSettings.from_defaults()
+    session_config = AppSessionConfig(project_name=args.project)
+
     composite_recorder = CompositeRecorder(project_name=args.project)
 
     # Add tmux recorder
     tmux_recorder = TmuxAsciinemaRecorder(
-        project_name=args.project, 
+        static_config=static_config,
+        session_config=session_config,
         tmux_session_name=args.session,
-        config=config
     )
     composite_recorder.add_recorder(tmux_recorder)
 
     # Add video recorder if enabled
-    video_recorder: Optional[VideoRecorder] = None
     if args.video:
         video_recorder = VideoRecorder(
             project_name=args.project,
@@ -96,7 +98,7 @@ def main() -> None:
 
     # Clean up temporary resources
     if not args.keep_tmp:
-        ResourceCleaner(config.tmp_dir).cleanup()
+        ResourceCleaner(static_config.tmp_dir).cleanup()
 
 
 if __name__ == "__main__":

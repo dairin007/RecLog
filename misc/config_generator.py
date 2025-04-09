@@ -11,15 +11,15 @@ class ConfigGenerator:
     logging while preserving user settings.
     """
     
-    def __init__(self, config: AppStaticSettings, paths: AppSessionConfig):
+    def __init__(self, static_config: AppStaticSettings, session_config: AppSessionConfig):
         """
         @brief Initialize the configuration generator.
         
         @param config AppConfig instance with path information.
         @param paths SessionPaths instance with session-specific paths.
         """
-        self.config = config
-        self.paths = paths
+        self.config = static_config
+        self.paths = session_config
         
     def generate_tmux_conf(self) -> Path:
         """
