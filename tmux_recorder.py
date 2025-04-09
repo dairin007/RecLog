@@ -6,7 +6,7 @@ from app_config import AppConfig
 from session_paths import SessionPaths, generate_session_paths
 from config_generator import ConfigGenerator
 from tmux_session import TmuxSessionManager
-from recorder import AsciinemaRecorder
+from asciinemarecorder import AsciinemaRecorder
 from resource_cleaner import ResourceCleaner
 
 
@@ -46,8 +46,8 @@ class TmuxAsciinemaRecorder:
         # Initialize components
         self.config_generator = ConfigGenerator(self.config, self.paths)
         self.tmux_manager = TmuxSessionManager(self.tmux_session)
-        self.recorder = AsciinemaRecorder(self.paths.asciinema_file)
-        self.cleaner = ResourceCleaner(self.tmux_manager, self.config.tmp_dir)
+        self.AsciinemaRecorder = AsciinemaRecorder(self.paths.asciinema_file)
+        self.tmuxcleaner = ResourceCleaner(self.tmux_manager, self.config.tmp_dir)
 
         # Register cleanup to ensure tmux sessions and tmp settings don't remain after program exit
         atexit.register(self.cleanup_resources)
@@ -69,7 +69,7 @@ class TmuxAsciinemaRecorder:
         """
         @brief Start asciinema recording of the tmux session.
         """
-        self.recorder.start_recording(self.tmux_session)
+        self.AsciinemaRecorder.start_recording(self.tmux_session)
 
     def wait_for_tmux_exit(self) -> None:
         """
@@ -81,7 +81,7 @@ class TmuxAsciinemaRecorder:
         """
         @brief Clean up resources created during recording.
         """
-        self.cleaner.cleanup()
+        self.tmuxcleaner.cleanup()
 
     def get_session_info(self) -> Dict[str, Any]:
         """
