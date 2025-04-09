@@ -75,7 +75,7 @@ class TmuxAsciinemaRecorder(AbstractRecorder):
         @brief Start asciinema recording of the tmux session.
         """
         if self._is_recording:
-            print("Recording is already in progress")
+            print("tmux Recording is already in progress")
             return
 
         self._is_recording = True

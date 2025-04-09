@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-
+import time
 from Recorder.ab_recorder import AbstractRecorder
 from Reporter.ab_reporter import AbstractReporter
 from Reporter.tmux_asciinema_reporter import TmuxSessionReporter
@@ -74,9 +74,22 @@ class CompositeRecorder(AbstractRecorder):
 
         self._is_recording = True
 
-        # Start each recorder
+        # pre-hook
+        if self._video_recorder:
+            self._video_recorder.start_recording()
+            time.sleep(1)
+            if not self._video_recorder.is_recording:
+                print("[!] Warning: Video recording may not have started properly")
+
+        # on-tmux
+        if self._tmux_recorder:
+            self._tmux_recorder.start_recording()
+
+        # after-hook
         for recorder in self.recorders:
-            recorder.start_recording()
+            if recorder != self._video_recorder and recorder != self._tmux_recorder:
+                recorder.start_recording()
+                print(f"[✓] {type(recorder).__name__} started")
 
     def stop_recording(self) -> Optional[Dict[str, Path]]:
         """
@@ -134,11 +147,8 @@ class CompositeRecorder(AbstractRecorder):
         Calls wait_for_completion() on all managed recorders.
         """
         if self._tmux_recorder:
-            print("[*] Waiting for tmux session to end...")
             self._tmux_recorder.wait_for_completion()
-            print("[✓] Tmux session ended")
             if self._video_recorder and self._video_recorder.is_recording:
-                print("[*] Stopping video recording after tmux session ended...")
                 self._video_recorder.stop_recording()
         else:
             for recorder in self.recorders:

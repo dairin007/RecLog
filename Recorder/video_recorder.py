@@ -74,9 +74,9 @@ class VideoRecorder(AbstractRecorder):
 
         Launches ffmpeg in a separate thread to record the screen
         """
-        if self.is_recording:
-            print("Recording is already in progress")
-            return
+        # if self.is_recording:
+        #     print("video Recording is already in progress")
+        #     return
 
         # Setup before recording
         self.setup()
@@ -130,13 +130,17 @@ class VideoRecorder(AbstractRecorder):
             print(f"\nError during video recording: {e}")
             self._is_recording = False
 
+    def is_recording(self) -> bool:
+        process_running = self._process is not None and self._process.poll() is None
+        return self._is_recording and process_running
+
     def stop_recording(self):
         """
         @brief Stop the ongoing recording
 
         @return Path to the recorded video file, or None if no recording was in progress
         """
-        if not self._is_recording or not self._process or self._process.poll() is not None:
+        if not self.is_recording():
             print("No recording in progress")
             self._process = None
             self._thread = None
